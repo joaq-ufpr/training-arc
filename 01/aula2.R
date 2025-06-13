@@ -625,3 +625,74 @@ media_regioes3 <- data.frame(
     regioes = c("NORTE", "SUL"),
     medias = c(mean(medias_reg_norte$avg_numero_dias_sem_chuva), mean(medias_reg_sul$avg_numero_dias_sem_chuva)))
 print(media_regioes3)
+
+
+##
+require(tibble)
+require(magrittr)
+require(dplyr)
+
+## Tibble
+# é tipo um data(frame/table) só que melhor.
+
+meu_tibble <- tibble(
+    nome = c("Alice", "Bob", "Carol", "Ana", "João", "Carlos", "Patrícia", "Leonardo"),
+    idade = c(25, 30, 28, 20, 27, 50, 60, 45),
+    salario = c(5000, 6000, 5500, 8000, 2000, 3500, 10000, 3800 ), 
+    meio_de_transporte = c('onibus', 'bicicleta', 'onibus', 'carro', 'carro', 'onibus', 'onibus', 'bicicleta'))
+glimpse(meu_tibble)
+
+# Criando nova coluna
+meu_tibble$nova_coluna <- c(1, 2, 3, 4, 5, 6, 7, 8)
+meu_tibble$nova_coluna
+
+# é possível criar uma coluna com espaços
+meu_tibble <- mutate(meu_tibble, `minha coluna`  = 1:8) 
+# um rename de coluna para idade >>> idade_anos
+meu_tibble <- rename(meu_tibble, idade_anos = idade)
+meu_tibble
+
+## seleção omitindo certa colunas
+meu_tibble_sem_salario <- select(meu_tibble, -salario)
+
+# podemos filtrar e ordenar
+resultado <- filter(meu_tibble, idade_anos > 25)
+resultado
+
+# agrupamento de dados
+agregado_por_idade <- group_by(meu_tibble, idade_anos)
+summarize(agregado_por_idade, media_salario = mean(salario))
+
+### Listas
+# pense numa estrutra de dados versatil.
+# Exemplo de criação de lista
+
+minha_lista <- list(
+  vetor = c(1, 2, 3, 4, 5),
+  matriz = matrix(1:9, nrow = 3),
+  data_frame = data.frame(
+    nome = c("Alice", "Bob", "Carol"),
+    idade = c(25, 30, 28)
+  ),
+  lista_aninhada = list(
+    vetor_aninhado = c(10, 20, 30),
+    matriz_aninhada = matrix(1:4, nrow = 2)
+  )
+)
+minha_lista
+
+## assim como nas outra estruturas de dados
+# podemos acessar os dados atraves de colchetes
+# ou usando $
+elemento1 <- minha_lista[[1]]
+elemento1
+
+elemento2 <- minha_lista$data_frame
+elemento2
+
+elemento3 <- minha_lista$lista_aninhada$vetor_aninhado
+elemento3
+
+## um exemplo de adição de elementos feita de forma complexa
+minha_lista$nova_lista <- list(novo_vetor = c(1,2,3), nova_matriz = matrix(1:4, nrow = 2))
+minha_lista
