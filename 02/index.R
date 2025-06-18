@@ -286,4 +286,138 @@ View(tab_idade_media_por_especie_masc)
 ## Para cada espécie presente na base de dados, identifique o personagem mais velho e sua idade correspondente.
 # não tem como fazer isso.
 
+### Trabalhando com datas em R
+# O R tem funções próprias para lidar com isso
+# mas atualmente é mais conveniente trabalhar com
+# uma biblioteca chamada lubridate
 require(lubridate)
+data_ym <- ymd("2023-08-21")
+data_mdy <- mdy("08-21-2023")
+data_dmy <- dmy("21-08-2023")
+
+message("anos-mes-dia: ", data_dmy, "\n",
+      "mes-dia-ano: ", data_md, "\n",
+      "dia-mes-ano: ", data_dmy, "\n")
+
+sprintf("anos-mes-dia: %s", data_dmy)
+sprintf("mes-dia-ano: %s", data_md)
+sprintf("dia-mes-ano: %s", data_dmy)
+
+
+## Operações com datas
+data <- ymd("2023-08-21")
+data_nova <- data + days(7) # adiciona 7 dias a esta data
+data_anterior <- data - months(2) # subtrai 2 meses
+
+print(data)
+print(data_nova)
+print(data_anterior)
+
+## há mais funçoes desta lib para extrair infos de datas
+# saca só...
+data <- ymd_hms("2023-08-21 15:30:45")
+ano <- year(data)
+mes <- month(data)
+dia <- day(data)
+hora <- hour(data)
+minuto <- minute(data)
+segundo <- second(data)
+
+data_infos <- c(ano, mes, dia, hora, minuto, segundo)
+names(data_infos) <- c("ano", "mes", "dia", "hora", "minuto", "segundo")
+data_infos
+
+## Funções de resumos de datas no lubridate
+# o lubridate vem munido de funcionalidades para
+# realizar operações entre datas, não somente para somar,
+# subtrair etc, mas tambem para realizar a conversão do formato
+# para outros, ou seja, transformar mês em dias ou semanas, etc.
+
+data1 <- ymd("2023-08-21")
+data2 <- ymd("2023-08-14")
+diferenca_em_dias <- as.numeric(data2 - data1)
+diferenca_em_semanas <- as.numeric(weeks(data2 - data1))
+
+print(diferenca_em_dias)
+print(diferenca_em_semanas)
+
+### Lidar com fuso horario
+
+# data original no fuso de ny
+data_ny <- ymd_hms("2023-08-21 12:00:00", tz = "America/New_York")
+print(data_ny)
+
+# converte para o fuso de Londres
+data_london <- with_tz(data_ny, tz = "Europe/London")
+print(data_london)
+
+## Exemplo de calcular a diferenca de tempo entre diferentes fusos
+
+data_ny <- ymd_hms("2023-08-21 12:00:00", tz = "America/New_York")
+data_london <- ymd_hms("2023-08-21 17:00:00", tz = "Europe/London")
+
+diferenca_horas <- as.numeric(data_london - data_ny)
+print(diferenca_horas)
+
+## Exemplo do lubridate com dataframes
+
+dados <- tibble(
+    nome = c("Evento 1", "Evento 2"),
+    data = c(
+        ymd_hms("2023-08-21 12:00:00", tz = "America/New_York"),
+        ymd_hms("2023-08-21 17:00:00", tz = "Europe/London")
+    )
+)
+
+# Aqui convertemos todas as datas para um fuso comum como o UTC
+dados$data_utc <- with_tz(dados$data, tz = "UTC")
+print(dados)
+
+# perceba como o lubridate é uma baita de uma mão na roda
+# para esse tipo situ.
+
+## ### Exercicios
+
+car_crash <- readr::read_csv("datasets/archive/Brazil Total highway crashes 2010 - 2023.csv")
+glimpse(car_crash)
+View(tail(car_crash))
+
+## Utilizando o banco de dados car_crash formate a coluna
+## data em uma data (dd-mm-yyyy);
+
+car_crash$data <- as.Date(car_crash$data)
+car_crash$data <- format(car_crash$data, "%d-%m-%y")
+
+## Utilizando o banco de dados car_crash formate a coluna
+## horario para o horário do acidente (hh:mm:ss)
+
+car_crash$horario <- format(car_crash$horario, "%hh:%mm:%ss")
+
+## Qual o mês com maior quantidade de acidentes?
+
+car_crash %>%
+    group_by(month(data)) %>%
+    summarise(num_acidentes = n()) %>%
+    arrange(desc(num_acidentes))
+
+## Qual ano ocorreram mais acidentes?
+
+car_crash %>%
+    group_by(year(dmy(data))) %>%
+    summarise(num_acidentes = n()) %>%
+    arrange(desc(num_acidentes))
+
+
+## Qual horário acontecem menos acidentes?
+
+car_crash %>%
+    group_by(year(dmy(data))) %>%
+    summarise(num_acidentes = n()) %>%
+    arrange(desc(num_acidentes))
+
+## Qual a média, desvio padrão, mediana, Q1 e Q3 para
+## a quantidade de indivíduos classificados como
+## levemente feridos por mês/ano?
+
+## Quantos acidentes com vítimas fatais aconteceram,
+## por mês/ano, em mediana entre as 6:00am e 11:59am.
