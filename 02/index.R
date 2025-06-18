@@ -377,47 +377,70 @@ print(dados)
 # para esse tipo situ.
 
 ## ### Exercicios
+rm(list = ls())
 
+require(dplyr)
+require(magrittr)
+library(data.table)
+require(lubridate)
 car_crash <- readr::read_csv("datasets/archive/Brazil Total highway crashes 2010 - 2023.csv")
-glimpse(car_crash)
-View(tail(car_crash))
 
 ## Utilizando o banco de dados car_crash formate a coluna
 ## data em uma data (dd-mm-yyyy);
 
-car_crash$data <- as.Date(car_crash$data)
-car_crash$data <- format(car_crash$data, "%d-%m-%y")
+car_crash$data <- dmy(car_crash$data)
 
 ## Utilizando o banco de dados car_crash formate a coluna
 ## horario para o horário do acidente (hh:mm:ss)
 
-car_crash$horario <- format(car_crash$horario, "%hh:%mm:%ss")
+car_crash$horario <- hms(car_crash$horario)
 
 ## Qual o mês com maior quantidade de acidentes?
 
 car_crash %>%
-    group_by(month(data)) %>%
+    mutate(mes = month(data, label = TRUE)) %>%
+    group_by(mes) %>%
     summarise(num_acidentes_por_mes = n()) %>%
     arrange(desc(num_acidentes_por_mes))
 
 ## Qual ano ocorreram mais acidentes?
 
 car_crash %>%
-    group_by(year(dmy(data))) %>%
+    group_by(data) %>%
     summarise(num_acidentes_por_ano = n()) %>%
     arrange(desc(num_acidentes_por_ano))
 
 
 ## Qual horário acontecem menos acidentes?
 
-## car_crash %>%
-##     group_by(hour(as.Date(horario))) %>%
-##     summarise(num_acidentes_por_hora = n()) %>%
-##     arrange(num_acidentes_por_hora)
+car_crash %>%
+    mutate(hora = hour(horario)) %>%
+    group_by(hora) %>%
+    summarise(num_acidentes_por_hora = n()) %>%
+    arrange(num_acidentes_por_hora)
 
 ## Qual a média, desvio padrão, mediana, Q1 e Q3 para
 ## a quantidade de indivíduos classificados como
 ## levemente feridos por mês/ano?
 
+ex6 <- car_crash %>%
+    mutate(mes = month(data, label = TRUE),
+           ano = year(data)) %>%
+    group_by(mes, ano) %>%
+    summarise(media = mean(levemente_feridos, na.rm = TRUE),
+              Q1 = quantile(levemente_feridos, 0.25, type = 5, na.rm = TRUE),
+              Q3 = quantile(levemente_feridos, 0.75, type = 5, na.rm = TRUE),
+              sd = sd(levemente_feridos, na.rm = TRUE),
+              .groups = "drop")
+
 ## Quantos acidentes com vítimas fatais aconteceram,
-## por mês/ano, em mediana entre as 6:00am e 11:59am.
+## por mês/ano, em media entre as 6:00am e 11:59am.
+
+car_crash %>%
+    mutate(mes = month(data, label = TRUE),
+           ano = year(data),
+           hora = hour(horario)) %>%
+    filter(between(hora, lower = 6, upper = 11, incbounds = TRUE)) %>%
+    group_by(mes, ano) %>%
+    summarise(numero_mortos = mean(mortos, na.rm = TRUE),
+              .groups = "drop")
