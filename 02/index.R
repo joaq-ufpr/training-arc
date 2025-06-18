@@ -397,23 +397,23 @@ car_crash$horario <- format(car_crash$horario, "%hh:%mm:%ss")
 
 car_crash %>%
     group_by(month(data)) %>%
-    summarise(num_acidentes = n()) %>%
-    arrange(desc(num_acidentes))
+    summarise(num_acidentes_por_mes = n()) %>%
+    arrange(desc(num_acidentes_por_mes))
 
 ## Qual ano ocorreram mais acidentes?
 
 car_crash %>%
     group_by(year(dmy(data))) %>%
-    summarise(num_acidentes = n()) %>%
-    arrange(desc(num_acidentes))
+    summarise(num_acidentes_por_ano = n()) %>%
+    arrange(desc(num_acidentes_por_ano))
 
 
 ## Qual horário acontecem menos acidentes?
 
-car_crash %>%
-    group_by(year(dmy(data))) %>%
-    summarise(num_acidentes = n()) %>%
-    arrange(desc(num_acidentes))
+## car_crash %>%
+##     group_by(hour(as.Date(horario))) %>%
+##     summarise(num_acidentes_por_hora = n()) %>%
+##     arrange(num_acidentes_por_hora)
 
 ## Qual a média, desvio padrão, mediana, Q1 e Q3 para
 ## a quantidade de indivíduos classificados como
