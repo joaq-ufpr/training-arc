@@ -444,3 +444,197 @@ car_crash %>%
     group_by(mes, ano) %>%
     summarise(numero_mortos = mean(mortos, na.rm = TRUE),
               .groups = "drop")
+
+
+### JUNÇÃO DE DADOS(ESSE É COMPLICADO BICHO)
+# para entender como funciona a junção de dados
+# iremos utilizar o dataset nycflights13
+
+library(tidyverse)
+require(nycflights13)
+
+# O conceito de chaves no R é semelhante ao do SQL
+# porem, aqui não temos explicitado as PK's e FK's
+# nas tabelas. Ou seja, para identificarmos isso
+# devemos literalmente "fuçar" as tabelas e suas
+# respectivas colunas para poder fazer as junções
+
+#==========
+# Identificação das PK
+#==========
+
+# A PK aqui é a coluna carrier
+# que carrega o códigio da operadora. 
+glimpse(airlines)
+
+# A PK de airports é FAA
+# pois carrega o código do aeroporto
+glimpse(airports)
+
+# Nesta tabela a PK é tailnum
+# que identifica o avião.
+glimpse(planes)
+
+# nesta tabela temos um caso mais complicado
+# aqui a PK vai ser composta de 2 colunas
+# origin e time_hour
+# ou seja, PK => origin & time_hour
+glimpse(weather)
+
+#==========
+# Identificação das FK
+#==========
+
+# Na tabela flights temos que:
+# flights$tailnum é FK da tabela plane$tailnum
+# flights$carrier é FK da tabela airlines$carrier
+# flights$flight é PK de flights
+
+# Perceba as chaves compostas
+# flights(year, month, day, hour, origin) é FK de weather(year, month, day, hour, origin)
+# flights(origin, dest) é FK de airports(faa)
+glimpse(flights)
+
+# Após termos feito isso, podemos verificar
+# se os campos possuem valores únicos.
+# ou seja, contar n() > 1 nesses campos
+planes %>%
+    count(tailnum) %>%
+    filter(n > 1) # produziu 0
+
+weather %>%
+    count(time_hour, origin) %>%
+    filter(n > 1) # produziu 0
+
+# Temos que nos certificar também que não haja valores faltantes
+# caso um valor esteja ausente, não podemos identificar uma observação
+planes %>%
+    filter(is.na(tailnum)) # produziu 0
+
+weather %>%
+    filter(is.na(time_hour) | is.na(origin)) # produziu 0
+
+## Combinando dados
+# O dplyr fornece 6 funções para junção de dados.
+# Sendo elas 4 que são mutacionais e 2 de filtragem
+
+# Mutacionais
+# inner_join, full_join, left_join, right_join
+
+# Esse tipo de filtragem combina valores de dois
+# conjunto e adiciona em uma nova coluna
+# exatemente como na função mutate()
+
+# vamos criar um df mais simples para trabalharmos essas ideias
+flights2 <- flights |>
+    filter(distance > 2000) |>
+    select(year, time_hour, origin, dest, tailnum, carrier)
+glimpse(flights2)
+
+# vamos testar o left_join
+# Aqui vamos pegar as linhas da primeira tabela(à esquerda)
+# e encontrar correspondencia na segunda tabela(à direita)
+# isso irá gerar uma nova coluna contendo o match das infos.
+# caso não haja correspondencia, NA será empregado na obs
+
+# exemplo
+# queremos o nome completo da cia aerea no nosso df.
+# Pra isso vamos combinar infos de flights2 com airlines
+flights2_airlines <- flights2 %>%
+    ## left_join(., airlines) # Aqui o interpretador identifica qual é a coluna chave
+    left_join(., airlines, by = "carrier") # mas é prática deixar explicito como aqui.
+
+# note que foi criado uma nova coluna contendo
+# o nome da cia aerea
+View(head(flights2_airlines))
+
+# Já o right_join é a "mesma coisa" que o left.
+# porem, vamos pegar as linhas da tabela a direita
+# para encontrarmos correspondencia na esquerda.
+# Ou seja, o caminho inverso.
+
+# exemplo
+# Suponha que queremos buscar informações acerca dos vôos realizados
+# pelos aviões em flights2. Para isso, unimos as tabelas planes com flights2
+planes_flights <- flights2 %>%
+    right_join(planes, by = "tailnum")
+
+# veja como foi retornado as infos refentes aos aviões
+View(head(planes_flights))
+
+# O inner_join, podemos interpretar como a operação de
+# intersecção entre conjuntos, em outras palavras, retorna infos
+# somente se houver correspondencia entre ambas as tabelas.
+
+# exemplo
+# Queremos informações acerca dos aeroportos de origem realizados
+# pelos aviões. Mas, queremos infos que estão em ambas as tabelas
+# Para isso, unimos flights2 airports
+origin_flights <- flights2 %>%
+    inner_join(airports, by = c("origin" = "faa"))
+
+origin_flights <- flights2 %>%
+    inner_join(airports, join_by(origin == faa))
+
+View(head(origin_flights))
+
+# Por ultimo, temos o full_join
+# retorna todas as linhas de ambos os conjuntos de dados
+# (tabelas à esquerda e à direita). Ele preenche com NA
+# aqueles valores que não têm correspondência em uma das tabelas.
+
+# Suponha que, temos interesse em buscar informações acerca dos aeroportos
+# de destino realizados pelos aviões em flights2. Porém, apenas temos
+# interesse em todas informações que aparecem em ambos bancos.
+# Para isso, basta unirmos as tabelas flights2 com airports.
+dest_flights <- flights2 %>% 
+  full_join(airports, by = c("dest"= "faa"))
+
+dest_flights <- flights2 %>% 
+  full_join(airports, join_by(dest == faa))
+View(head(origin_flights))
+
+# Filtragem
+# semi_join(), anti_join()
+
+# Semi-junções mantêm todas as linhas em x que têm uma correspondência em y
+
+# exemplo
+# vamos usar um semi_join para filtrar os dados de aeroportos para
+# mostrar somente os aeroportos de origem
+airports %>%
+    semi_join(flights2, join_by(faa == origin))
+
+## glimpse(airports)
+
+# Anti-junções são o oposto: elas retornam todas as linhas em x que
+# não têm correspondência em y. É bem útil para encontrar valores
+# ausentes que são implicitos nos dados. Esses valores ausentes não aparecem
+# como NA, mas sim como valor ausente
+# Por exemplo, podemos encontrar linhas ausentes em aeroportos
+# procurando voos que não tenham um aeroporto de destino correspondente:
+flights %>%
+    anti_join(airports, join_by(dest == faa)) %>%
+    distinct(dest)
+
+
+### Exercicios
+
+# Para vôos com atraso superior a 24 horas em flights, verifique as
+# condições climáticas em weather. Há algum padrão? Quais os meses
+# do ano em que você encontra os maiores atrasos?
+
+## flights |>
+##     left_join(., weather, join_by())
+##     filter(dep_delay > 24 | arr_delay > 24)
+
+## glimpse(flights$dep_delay)
+
+# Encontre os 20 destinos mais comuns e identifique seu aeroporto.
+# Qual a temperatura média (mensal) em Celcius desses lugares?
+# E a precipiração média, em cm?
+
+# Inclua uma coluna com a cia aérea na tabela planes.
+# Quantas companhias áreas voaram cada avião naquele ano?
+
+# Inclua a latitude e longitude de cada origem destino na tabela flights
