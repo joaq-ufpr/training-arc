@@ -618,50 +618,56 @@ flights %>%
     distinct(dest)
 
 ### Exercicios
+# Limpar o ambiente
+rm(list = ls())
+
 require(dplyr)
 require(magrittr)
 library(data.table)
-require(nycflights13)
 require(lubridate)
+
+# Leitura dos dados
+flights_  <- readr::read_csv("datasets/nycflights13/nyc_flights.csv")
+weather_  <- readr::read_csv("datasets/nycflights13/nyc_weather.csv")
+airlines_ <- readr::read_csv("datasets/nycflights13/nyc_airlines.csv")
+airports_ <- readr::read_csv("datasets/nycflights13/nyc_airports.csv")
+planes_   <- readr::read_csv("datasets/nycflights13/nyc_planes.csv")
 
 # Para vôos com atraso superior a 24 horas em flights, verifique as
 # condições climáticas em weather. Há algum padrão? Quais os meses
 # do ano em que você encontra os maiores atrasos?
 
-# Pequeno rascunho
-## dep_atraso_distinto <- flights %>%
+### Pequeno rascunho
+## dep_atraso_distinto <- flights_ %>%
 ##     filter(dep_delay >= 720) %>%
-##     select(dep_delay) %>%
-##     distinct(dep_delay) %>%
-##     arrange((dep_delay))
+##     select(dep_delay, month) %>%
+##     arrange(month)
+## View(dep_atraso_distinto)
 
 ## arr_atraso_distinto <- flights %>%
 ##     filter(arr_delay >= 720) %>%
-##     select(arr_delay, year) %>%
-##     ## distinct(arr_delay) %>%
-##     arrange((year))
+##     select(arr_delay, month) %>%
+##     arrange(month)
+## View(arr_atraso_distinto)
 
-teste <- flights %>%
-    select(month) %>%
-    distinct(month)
-
-teste
-
-class(flights$month)
-class(weather$month)
-
-voos_clima <- flights %>%
+voos_clima <- flights_ %>%
     filter(dep_delay >= 120 | arr_delay >= 120) %>%
     inner_join(., weather,
               by = join_by(year, month, day, origin, hour, time_hour)) %>%
-    select(month, year, temp, humid, precip, visib, wind_speed) %>%
-    group_by(month) %>%
-    summary()   
-
-View(tail(voos_clima))
-
+    select(dep_delay, arr_delay, month, year, temp, humid, precip, visib, wind_speed) %>%
+    mutate(mes = month(month, label = TRUE)) %>%
+    group_by(mes) %>%
+    summarise(media_atraso_saida = mean(dep_delay, na.rm = TRUE),
+              media_atraso_chegada = mean(arr_delay, na.rm = TRUE),
+              media_temperatura = mean(temp, na.rm = TRUE),
+              media_humidade = mean(humid, na.rm = TRUE),
+              media_precipitacao = mean(precip, na.rm = TRUE),
+              media_visibilidade = mean(visib, na.rm = TRUE),
+              media_veloc_vento = mean(wind_speed, na.rm = TRUE))
+    
+View(voos_clima)
 # Encontre os 20 destinos mais comuns e identifique seu aeroporto.
-# Qual a temperatura média (mensal) em Celcius desses lugares?
+# Qual a temperatura média (mensal) em Celsius desses lugares?
 # E a precipiração média, em cm?
 
 # Inclua uma coluna com a cia aérea na tabela planes.
