@@ -652,7 +652,7 @@ planes_   <- readr::read_csv("datasets/nycflights13/nyc_planes.csv")
 
 voos_clima <- flights_ %>%
     filter(dep_delay >= 120 | arr_delay >= 120) %>%
-    inner_join(., weather,
+    inner_join(., weather_,
               by = join_by(year, month, day, origin, hour, time_hour)) %>%
     select(dep_delay, arr_delay, month, year, temp, humid, precip, visib, wind_speed) %>%
     mutate(mes = month(month, label = TRUE)) %>%
@@ -666,11 +666,56 @@ voos_clima <- flights_ %>%
               media_veloc_vento = mean(wind_speed, na.rm = TRUE))
     
 View(voos_clima)
+
 # Encontre os 20 destinos mais comuns e identifique seu aeroporto.
 # Qual a temperatura média (mensal) em Celsius desses lugares?
 # E a precipiração média, em cm?
 
+top_destinos <- flights_ %>%
+  count(dest, sort = TRUE) %>%
+  slice_max(n, n = 20)
+
+top_destinos_info <- top_destinos %>%
+  left_join(airports_, by = c("dest" = "faa"))
+
+View(top_destinos_info)
+
+fahrenheit_to_celcius <- function(temp) (temp -32) * 5/9
+inches_to_cm <- function(value) value * 2.54
+
+clima_destinos <- flights_ %>%
+  filter(dest %in% top_destinos$dest) %>%
+  inner_join(weather_, by = c("time_hour", "origin")) %>%
+  mutate(mes = month(time_hour, label = TRUE),
+         temp_c = fahrenheit_to_celcius(temp),
+         precip_cm = inches_to_cm(precip)) %>%
+  group_by(dest, mes) %>%
+  summarise(temp_media = mean(temp_c, na.rm = TRUE),
+            precip_media = mean(precip_cm, na.rm = TRUE),
+            .groups = "drop")
+
+View(clima_destinos)
+
 # Inclua uma coluna com a cia aérea na tabela planes.
 # Quantas companhias áreas voaram cada avião naquele ano?
 
+# está errado essa query
+companhias_por_aviao <- flights_ %>%
+  select(tailnum, carrier) %>%
+  filter(!is.na(tailnum)) %>%
+  distinct() %>%
+  left_join(airlines_, by = "carrier") %>%
+  group_by(carrier) %>%
+  summarise(num_companhias = n_distinct(name)) %>%
+  arrange(desc(num_companhias))
+
+View(tail(companhias_por_aviao))
+
 # Inclua a latitude e longitude de cada origem destino na tabela flights
+flights_geo <- flights_ %>%
+  left_join(airports_ %>% select(faa, lat, lon), by = c("origin" = "faa")) %>%
+  rename(lat_origin = lat, lon_origin = lon) %>%
+  left_join(airports_ %>% select(faa, lat, lon), by = c("dest" = "faa")) %>%
+  rename(lat_dest = lat, lon_dest = lon)
+
+View(flights_geo)
