@@ -588,7 +588,7 @@ View(head(origin_flights))
 # interesse em todas informações que aparecem em ambos bancos.
 # Para isso, basta unirmos as tabelas flights2 com airports.
 dest_flights <- flights2 %>% 
-  full_join(airports, by = c("dest"= "faa"))
+  full_join(airports, by = c("dest" = "faa"))
 
 dest_flights <- flights2 %>% 
   full_join(airports, join_by(dest == faa))
@@ -617,18 +617,48 @@ flights %>%
     anti_join(airports, join_by(dest == faa)) %>%
     distinct(dest)
 
-
 ### Exercicios
+require(dplyr)
+require(magrittr)
+library(data.table)
+require(nycflights13)
+require(lubridate)
 
 # Para vôos com atraso superior a 24 horas em flights, verifique as
 # condições climáticas em weather. Há algum padrão? Quais os meses
 # do ano em que você encontra os maiores atrasos?
 
-## flights |>
-##     left_join(., weather, join_by())
-##     filter(dep_delay > 24 | arr_delay > 24)
+# Pequeno rascunho
+## dep_atraso_distinto <- flights %>%
+##     filter(dep_delay >= 720) %>%
+##     select(dep_delay) %>%
+##     distinct(dep_delay) %>%
+##     arrange((dep_delay))
 
-## glimpse(flights$dep_delay)
+## arr_atraso_distinto <- flights %>%
+##     filter(arr_delay >= 720) %>%
+##     select(arr_delay, year) %>%
+##     ## distinct(arr_delay) %>%
+##     arrange((year))
+
+teste <- flights %>%
+    select(month) %>%
+    distinct(month)
+
+teste
+
+class(flights$month)
+class(weather$month)
+
+voos_clima <- flights %>%
+    filter(dep_delay >= 120 | arr_delay >= 120) %>%
+    inner_join(., weather,
+              by = join_by(year, month, day, origin, hour, time_hour)) %>%
+    select(month, year, temp, humid, precip, visib, wind_speed) %>%
+    group_by(month) %>%
+    summary()   
+
+View(tail(voos_clima))
 
 # Encontre os 20 destinos mais comuns e identifique seu aeroporto.
 # Qual a temperatura média (mensal) em Celcius desses lugares?
