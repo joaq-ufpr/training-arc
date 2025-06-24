@@ -719,3 +719,88 @@ flights_geo <- flights_ %>%
   rename(lat_dest = lat, lon_dest = lon)
 
 View(flights_geo)
+
+
+#### Agora iremos ver parte de organização dos dataframes
+# ou seja, pivotagem.
+
+# Alguns mottos sobre dados tidy
+
+# 1 - Cada variável é uma coluna; cada coluna é uma variável
+
+# 2 - Cada observação é uma linha; cada linha é uma observação
+
+# 3 - Cada valor é uma célula; cada célula é um único valor
+
+## Tipos de organização
+
+## WIDE
+# Nesse formato, os dados são organizados de forma que cada variável é
+# representada por uma coluna separada e cada observação (ou instância)
+# ocupa uma única linha. Isso significa que as informações são distribuídas
+# em várias colunas, tornando-o mais adequado para conjuntos de dados com
+# poucas variáveis, onde as informações são bem condensadas.
+
+## LONG
+# Já no formato long (ou longo), os dados são organizados de maneira que as variáveis
+# estão empilhadas em uma única coluna, enquanto uma coluna adicional é usada para
+# indicar o nome da variável. Cada observação é representada por uma linha separada.
+# Esse formato é ideal quando se trabalha com conjuntos de dados mais complexos,
+# nos quais as informações estão espalhadas em várias categorias ou momentos de tempo, por exemplo.
+
+## Pivotando em R
+# o R é munido de funções para que possamos fazer a pivotagem
+# ou seja, tranformar linha em coluna e vice e versa
+# para termos exemplos de como fazer isso vamos utilizar
+# os datasets de tuberculose da OMS
+# Para lidar com os dados da OMS
+# tem que carregar a biblioteca tidyr
+require(tidyr)
+data(who)
+table1
+
+# pivot_wider()
+# usamos essa função para tranformar nossos para um formato largo
+# a sua syntax é
+# pivot_wider(data, names_from, values_from)
+# data >>> o data frame
+# name_from >>> a coluna que contem os nomes das variáveis que queremos "espalhar"
+# values_from >>> a coluna que contem os valores correspondente destas variáveis.
+
+# exemplo
+# suponha que queremos o número de casos por ano
+table1 %>%
+    select(country, year, cases) %>%
+    pivot_wider(names_from = year, values_from = cases)
+
+# pivot_longer()
+# faz o inverso da wider, de forma simples é isso.
+# Geralmente, usamos pivot_longer quando temos
+# variáveis empilhadas em diferentes colunas e queremos reunir essas informações em uma única coluna.
+# A sua syntax é
+# pivot_longer(data, cols, names_to, values_to)
+# data >>> O conjunto de dados que você deseja transformar.
+# cols >>> As colunas que você deseja empilhar no formato longo.
+# names_to >>> O nome da nova coluna que irá conter os nomes das variáveis empilhadas.
+# values_to >>> O nome da nova coluna que irá conter os valores das variáveis empilhadas.
+# Suponha que queremos os casos e o tamanho da população como uma variável.
+table1 %>%
+    pivot_longer(cols = -c(country, year),
+                 names_to = "variavel",
+                 values_to = "tamanho")
+
+## separando as observações
+# a função separate() separa(dãa) uma única coluna em várias colunas,
+# dividindo-a sempre que um caractere separador aparece.
+# Exemplo
+table3 # Note que "rate" é constituidade de casos/população
+
+# separendo
+separated <- table3 %>%
+    separate(rate, into = c("cases", "population"))
+
+separated
+
+# Juntando novamente
+separated %>%
+    unite(rate, cases, population, sep = "/")
