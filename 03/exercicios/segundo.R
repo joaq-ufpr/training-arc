@@ -56,8 +56,9 @@ desvio_medio_abs(month_wind$Wind) # :2.746452
 # (c) Para todas as variáveis do banco airquality a variância
 # amostral é maior do que o desvio médio absoluto.
 # R >>> TRUE
-var_df <- sapply(na.omit(airquality), FUN = variancia_amostral, na.rm = TRUE)
-dam_df <- sapply(na.omit(airquality), FUN = desvio_medio_abs)
+
+var_df <- sapply(airquality, FUN = variancia_amostral, na.rm = TRUE)
+dam_df <- sapply(airquality, FUN = desvio_medio_abs, na.rm = TRUE)
 
 sum(var_df) >= sum(dam_df) # : TRUE
 
@@ -149,18 +150,20 @@ varrer_matrix <- function(m) {
     return(list(resultado = m, contagem_primos = n_primos))
 }
 
-varrer_matrix(A)
-varrer_matrix(B)
-varrer_matrix(C)
+## varrer_matrix(A)
+## varrer_matrix(B)
+## varrer_matrix(C)
 
 # (a) A matriz A tem 2 números primos.
 # R >>> FALSE
+
 mA <- varrer_matrix(A)
 mA$contagem_primos # :3
 
 # (b) A soma dos elementos da diagonal
 # principal da matriz B transformada é -2162.
 # R >>> FALSE
+
 mB <- varrer_matrix(B)
 sum(diag(mB$resultado)) # :-2047.649
 
@@ -173,11 +176,13 @@ sum(diag(mB$resultado)) # :-2047.649
 
 # (d) O maior elemento, em módulo, da matriz C transformada é 184.
 # R >>> TRUE
+
 mC <- varrer_matrix(C)
 max(abs(mC$resultado)) # :184
 
 # (e) A soma dos elementos da coluna 2 da matriz B transformada é -2130.
 # R >>> FALSE
+
 mB <- varrer_matrix(B)
 round(sum(mB$resultado[, 2], 0)) # :-2130
 
@@ -198,5 +203,42 @@ numero_base <- function(data) {
     return(num_base)
 }
 
-## data <- "29/12/1999"
+numerol_individual <- function(x) ((x^2) + (7 * x) + 2)
+
+numerol_casal <- function(x, y) (x^2 + y^7)
+
+## data <- "12/10/2008"
 ## numero_base(data)
+
+astro_individuo <- fread("datasets/Astrologia_Individuo.txt")
+astro_casal     <- fread("datasets/Astrologia_Casal.txt")
+
+
+astro_individuo <- as_tibble(astro_individuo)
+astro_casal <- as_tibble(astro_casal)
+names(astro_individuo) <- c("data_nascimento")
+names(astro_casal)     <- c("data_nascimento_x", "data_nascimento_y")
+
+# (a) Existem 97 casais com Número Base 6, e 233 casais com essa
+# numerologia para Casal.
+
+
+
+# (b) A Numerologia do Indivíduo, de um indivíduo nascido em 13/10/2008 é 5.
+# R >>> FALSE
+
+nasc_individuo <- astro_individuo[grepl("13/10/2008", astro_individuo$data_nascimento), 1]
+numero_base_individuo <- numero_base(nasc_individuo)
+numero_base_individuo # :6
+
+# (c) Um indivíduo nascido em 1/9/1993 apresenta Número Base igual à 5.
+# R >>> TRUE
+nasc_individuo <- astro_individuo[grepl("1/9/1993", astro_individuo$data_nascimento), 1]
+numero_base_individuo <- numero_base(nasc_individuo)
+numero_base_individuo # :5
+
+# (d) Existem 122 indivíduos com o Número Base 7, e 89
+# indivíduos com essa numerologia individual.
+
+# (e) O Número para Casal, com indivíduos nascidos em 31/7/2010
+# e 23/12/1998 é 13
